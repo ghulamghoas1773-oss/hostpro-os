@@ -1,0 +1,18 @@
+{
+  "appId": "agency.hostpro.os",
+  "appName": "HostPro OS",
+  "webDir": "www",
+  "android": { "allowMixedContent": false },
+  "server": { "androidScheme": "https" },
+  "backgroundColor": "#000000",
+  "plugins": {
+    "CapacitorHttp": { "enabled": true },
+    "SplashScreen": {
+      "backgroundColor": "#000000",
+      "showSpinner": false,
+      "launchAutoHide": true,
+      "launchShowDuration": 600
+    },
+    "StatusBar": { "style": "DARK", "backgroundColor": "#000000" }
+  }
+}
