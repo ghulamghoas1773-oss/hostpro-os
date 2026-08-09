@@ -1,0 +1,21 @@
+{
+  "name": "HostPro OS",
+  "short_name": "HostPro",
+  "description": "Onsite operations and revenue for the Sky Suites portfolio.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Clock in", "url": "./index.html#clock" },
+    { "name": "Slack issues", "url": "./index.html#issues" }
+  ]
+}
