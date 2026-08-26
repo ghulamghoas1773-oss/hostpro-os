@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="HostPro OS">
+<meta name="apple-mobile-web-app-title" content="HostPro">
 <link rel="manifest" href="manifest.webmanifest" id="pwaManifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -273,6 +273,142 @@ tr.grouped td{background:#0b0b0d;color:var(--accent);font-size:11.5px;text-trans
   .panel{padding:18px}
 }
 </style>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     MOBILE FIT — added 11 Aug 2026
+     Additive and self-contained. Delete this whole <style> element and
+     the app returns exactly to how it behaved before. No markup, no
+     logic and no class name changes.
+
+     THE PROBLEM IT SOLVES
+     The header could not shrink. .nav__right held the sync label and the
+     who pill, both white-space:nowrap, next to a 159px logo. On a 390px
+     phone that chain measured 471px, so the page laid out 472px wide and
+     the phone had to be pinched out to see it.
+
+     That one overflow caused everything else. The browser widens the
+     layout viewport to the widest thing on the page, so @media rules were
+     being evaluated against 472px instead of 390px — which is why the
+     max-width:620px rules never fired, forms stayed two columns, and the
+     month picker sat off the right edge. Letting the header shrink fixes
+     the rest by itself.
+
+     RULE OF THUMB FOR ANYTHING ADDED LATER
+     If an element must not wrap, it also needs min-width:0 and a way to
+     truncate, or it becomes the new floor width for the whole app.
+     ══════════════════════════════════════════════════════════════════ -->
+<style id="mobileFit">
+
+/* ---------- 1. the fix: a header that is allowed to shrink ---------- */
+@media(max-width:760px){
+  html,body{max-width:100%;overflow-x:hidden}
+
+  .nav__in{gap:10px;padding:0 12px;min-width:0}
+  .logo{flex:0 0 auto;min-width:0}
+
+  /* Shrink before overflow, in this order: the name first, then the
+     sync label. The avatar and the status dot never shrink — they are
+     the two things that still read at a glance. */
+  .nav__right{flex:1 1 auto;min-width:0;justify-content:flex-end;gap:8px}
+  .sync{flex:0 1 auto;min-width:0;overflow:hidden}
+  #syncTxt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .sync__dot{flex:0 0 auto}
+  .who{flex:0 1 auto;min-width:0;overflow:hidden;padding:5px 5px 5px 10px}
+  #whoName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .who__dot{flex:0 0 auto}
+}
+
+/* Below this width the wordmark and the sync label stop earning their
+   space. The monogram and the coloured dot carry the same meaning. */
+@media(max-width:620px){
+  .logo{font-size:0;gap:0}
+  .logo__mark{border-right:none;padding-right:0}
+}
+/* The label used to be hidden entirely on narrow phones, which left a
+   bare coloured dot and no way to tell syncing from offline. It now
+   shrinks and truncates instead — setSync also sets a short form of the
+   text for exactly this width. */
+@media(max-width:430px){
+  #syncTxt{font-size:11px;max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .who{max-width:118px}
+  .sync{gap:5px}
+}
+
+/* ---------- 2. bottom tab bar: five tabs, any screen ---------- */
+@media(max-width:760px){
+  .nav__links{overflow-x:hidden;justify-content:space-around}
+  /* Size to the label rather than to an equal fifth, so nothing is
+     truncated at five tabs. min-width:0 is the safety net if a sixth
+     is ever added — it shortens instead of pushing the bar wider. */
+  .nav__links button{flex:0 1 auto;min-width:0;font-size:12px;padding:9px 6px;
+    overflow:hidden;text-overflow:ellipsis}
+}
+
+/* ---------- 3. the month picker comes first, not last ----------
+   It filters every screen in the app, so on a phone it leads the row
+   instead of being pushed past the right edge by the spacer. */
+@media(max-width:760px){
+  .subnav{padding:8px 12px}
+  .subnav__in{gap:6px}
+  .subnav .spacer{display:none}
+  .subnav button{white-space:nowrap;flex:0 0 auto}
+  .monthpick{order:-1;flex:0 0 auto}
+}
+
+/* ---------- 4. iOS: no zoom when a field is tapped ----------
+   Safari zooms into any focused field under 16px and does not zoom back
+   out. Every input on a phone is 16px for that one reason. */
+@media(max-width:760px){
+  .f input,.f select,.f textarea,.search,select.pick,.inline,.monthpick,
+  input,select,textarea{font-size:16px}
+  .search{min-width:0;width:100%;max-width:none}
+  .f input,.f select,.f textarea{padding:12px 13px}
+}
+
+/* ---------- 4b. one form field per row on a phone ----------
+   This is what the existing 620px rule already intended, done with flex
+   instead of a 1fr grid track. A grid track will not shrink below the
+   widest thing inside it, and a <select> is as wide as its longest
+   option — "Payment proof not received" was holding the booking form
+   open and pushing fields past the right edge. A stacked flex column
+   cannot be pushed out of shape by a long option. Nothing is truncated;
+   each select still opens at full width when tapped. */
+@media(max-width:760px){
+  .grid{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .grid > *{width:100%;min-width:0}
+  .f{min-width:0}
+  .f input,.f select,.f textarea{min-width:0;max-width:100%;width:100%}
+}
+
+/* ---------- 5. wide tables stay swipeable, and stay put ----------
+   Tables were already inside .scroll and were never the cause of the
+   zoom. This only stops a sideways swipe on a table from dragging the
+   page with it. */
+@media(max-width:760px){
+  .scroll{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+  th,td{padding-left:9px;padding-right:9px}
+}
+
+/* ---------- 6. panels, modals and touch targets ---------- */
+@media(max-width:760px){
+  .panel{padding:16px;border-radius:14px}
+  .modal{padding:12px}
+  .modal__box{padding:18px;border-radius:14px}
+  .gate__card{padding:28px 22px}
+  .mini{padding:6px 9px}
+  .btn{min-height:40px}
+  .stats{gap:10px}
+}
+
+/* ---------- 7. iPhone home-screen installs ----------
+   html.native is set by Capacitor only, so a PWA added to the iPhone
+   home screen got no safe-area padding and the header sat under the
+   Dynamic Island. Same treatment, keyed off the display mode instead. */
+@media all and (display-mode:standalone){
+  .nav{padding-top:env(safe-area-inset-top)}
+  .subnav{top:calc(var(--nav-h) + env(safe-area-inset-top))}
+}
+</style>
 </head>
 <body>
 
@@ -398,6 +534,16 @@ tr.grouped td{background:#0b0b0d;color:var(--accent);font-size:11.5px;text-trans
   <div class="panel" id="dMoneyPanel"><h2>Portfolio position</h2>
     <div class="desc">Bookings, refunds and expenses for the selected month, by owner.</div>
     <div class="scroll"><table id="dOwner"></table></div></div>
+
+  <!-- Lives on Overview because it is the one page everybody can reach.
+       It was on Settings, which is admin-only, so managers and staff had
+       no way to sign out at all. -->
+  <div class="panel"><h2>Your session</h2>
+    <div class="desc" id="whoInfo">—</div>
+    <div class="head" style="margin-top:6px">
+      <button class="btn btn--ghost btn--sm" id="btnOut">Sign out</button>
+    </div>
+  </div>
 </section>
 
 <!-- ═════ ISSUES ═════ -->
@@ -421,7 +567,12 @@ tr.grouped td{background:#0b0b0d;color:var(--accent);font-size:11.5px;text-trans
     <div class="head"><h2>Reported issues</h2>
       <input class="search spacer" id="issSearch" placeholder="Search text, property, reporter…">
       <select class="pick" id="issMgr"><option value="">All managers</option></select>
-      <select class="pick" id="issStat"><option value="">Any status</option><option>Open</option><option>Acknowledged</option><option>Resolved</option></select>
+      <select class="pick" id="issState"><option value="">Open and closed</option><option>Open</option><option>Closed</option></select>
+      <select class="pick" id="issStat"><option value="">Any stage</option><option>Open</option>
+        <option>Acknowledged</option><option>Escalated</option><option>In Progress</option><option>Resolved</option></select>
+      <select class="pick" id="issOut"><option value="">Any outcome</option><option>Issue resolved</option>
+        <option>Relocated</option><option>Discount offered on future stay</option>
+        <option>Compensation</option><option>Refunded</option></select>
       <select class="pick" id="issSev"><option value="">Any severity</option><option>Major</option><option>Moderate</option><option>Minor</option></select>
       <button class="btn btn--ghost btn--sm" data-exp="Issues">Export</button></div>
     <div class="scroll"><table id="issTbl"></table></div></div>
@@ -525,7 +676,8 @@ tr.grouped td{background:#0b0b0d;color:var(--accent);font-size:11.5px;text-trans
       <div class="f"><label>Contact</label><input id="peContact"></div>
       <div class="f"><label>Base salary</label><input id="peSalary" type="number" min="0"></div>
       <div class="f"><label>Currency</label><select id="peCur"><option>GHS</option><option>PKR</option><option>USD</option></select></div>
-      <div class="f"><label>Password</label><input id="pePw" placeholder="Their sign-in password"></div>
+      <div class="f hidden" id="pePwWrap"><label>Password</label><input id="pePw" placeholder="Their sign-in password"></div>
+      <div class="f hidden" id="peNoPw"><label>Password</label><div class="hint" style="margin-top:0">Set from Admin › Logins by the HostPro account once they are added.</div></div>
       <div class="f"><label>Holds field funds?</label><select id="peFund"><option value="">No</option><option value="Yes">Yes</option></select></div>
     </div>
     <div style="margin-top:18px"><button class="btn btn--primary" id="peSave">Add to the team</button></div>
@@ -539,6 +691,10 @@ tr.grouped td{background:#0b0b0d;color:var(--accent);font-size:11.5px;text-trans
 
 <!-- ═════ PERFORMANCE ═════ -->
 <section class="page" id="pg-perf">
+  <div class="panel" id="rfPanel"><h2>Red flags</h2>
+    <div class="desc">Raised automatically — a task that passed its deadline unfinished, or a checklist
+      item not ticked by the end of the day. Nobody can add or remove one by hand.</div>
+    <div class="scroll"><table id="rfTbl"></table></div></div>
   <div class="panel panel__glow hidden" id="pfAdd"><h2>Log performance</h2>
     <div class="desc">Ratings feed the incentive figures and the monthly reviews.</div>
     <div class="grid g4">
@@ -644,6 +800,9 @@ tr.grouped td{background:#0b0b0d;color:var(--accent);font-size:11.5px;text-trans
       <select class="pick" id="bkChan"><option value="">All channels</option></select>
       <select class="pick" id="bkProof"><option value="">Any proof state</option>
         <option>Payment proof received</option><option>Payment proof not received</option></select>
+      <select class="pick" id="bkPay"><option value="">All payment channels</option></select>
+      <select class="pick" id="bkVer"><option value="">All statuses</option>
+        <option value="Yes">Verified</option><option value="No">Un-Verified</option></select>
       <button class="btn btn--ghost btn--sm" data-exp="Income">Export</button></div>
     <div class="scroll"><table id="bkTbl"></table></div></div>
   <div class="panel"><h2>Direct booking leaderboard</h2>
@@ -791,14 +950,13 @@ tr.grouped td{background:#0b0b0d;color:var(--accent);font-size:11.5px;text-trans
     <div class="head" style="margin:12px 0 0"><input class="search" id="lCat" placeholder="e.g. Electricity ⚡️">
       <button class="btn btn--ghost btn--sm" data-addlist="Categories">Add</button></div>
     <div id="tagCat" style="margin-top:14px"></div></div>
-  <div class="panel"><h2>This device</h2>
+  <div class="panel hidden" id="devPanel"><h2>This device</h2>
     <div class="desc" id="devInfo">—</div>
     <div class="head" style="margin-top:6px">
       <button class="btn btn--ghost btn--sm" id="btnBackup">Download a full backup</button>
       <button class="btn btn--ghost btn--sm" id="btnSlack">Pull Slack now</button>
       <button class="btn btn--ghost btn--sm" id="btnServer">Change workspace link</button>
       <button class="btn btn--ghost btn--sm" id="btnDiag">Run diagnostics</button>
-      <button class="btn btn--ghost btn--sm" id="btnOut">Sign out</button>
     </div>
     <pre id="diagOut" class="hidden" style="margin-top:16px;background:#0e0e10;border:1px solid var(--line-strong);
       border-radius:8px;padding:14px;font-size:12.5px;line-height:1.7;color:#d8d8d8;white-space:pre-wrap;
@@ -835,6 +993,34 @@ tr.grouped td{background:#0b0b0d;color:var(--accent);font-size:11.5px;text-trans
     <button class="btn btn--ghost" id="rfCancel">Cancel</button></div>
   <div class="err" id="rfErr"></div></div></div>
 
+<!-- Updating a reported issue. A modal rather than inline dropdowns in the
+     row because the four fields depend on each other — the outcome only
+     exists once the work is resolved — and because the people who actually
+     close these are on phones in a stairwell, not at a desk. -->
+<div id="mIss" class="modal hidden"><div class="modal__box" style="max-width:640px">
+  <h2 id="mIssTitle">Update issue</h2>
+  <div class="note" id="mIssSummary"></div>
+  <div class="grid g2">
+    <div class="f"><label>Is this issue open or closed?</label>
+      <select id="isState"><option>Open</option><option>Closed</option></select>
+      <div class="hint">Closed means the case is finished and needs nothing further.</div></div>
+    <div class="f" id="isStageWrap"><label>Where does it stand?</label>
+      <select id="isStage"><option>Open</option><option>Acknowledged</option><option>Escalated</option>
+        <option>In Progress</option><option>Resolved</option></select>
+      <div class="hint">“Open” means nobody has picked it up yet.</div></div>
+    <div class="f hidden" id="isOutWrap" style="grid-column:1/-1"><label>How was it resolved?</label>
+      <select id="isOut"><option value="">— pick one —</option>
+        <option>Issue resolved</option><option>Relocated</option>
+        <option>Discount offered on future stay</option><option>Compensation</option>
+        <option>Refunded</option></select></div>
+    <div class="f" style="grid-column:1/-1"><label>Notes</label>
+      <textarea id="isNotes" placeholder="What actually happened, what was done, and whether the guest was satisfied."></textarea>
+      <div class="hint" id="isWho"></div></div>
+  </div>
+  <div class="modal__foot"><button class="btn btn--primary" id="isSave">Save update</button>
+    <button class="btn btn--ghost" id="isCancel">Cancel</button></div>
+  <div class="err" id="isErr"></div></div></div>
+
 <div id="toast"></div>
 
 <script>
@@ -856,9 +1042,17 @@ function toast(m, ms){ const t=$('toast'); t.textContent=m; t.classList.add('on'
 
 let AUTH=null, ME=null, D=null, REV=-1, curMonth='all', busy=false, maskPw=true;
 const PROOF_YES='Payment proof received', PROOF_NO='Payment proof not received';
-const WRITE = {People:4,Owners:4,Properties:4,Checklist:4,Incentives:4,ClockIns:4,
-  Tasks:3,Issues:3,Performance:3,Mistakes:3,GuestFeedback:3,
-  Income:3,Expenses:3,Refunds:4,Funds:4,CheckDone:1};
+/* Mirrors WRITE_TIER in Code.gs. Keep the two in step — this one only
+   decides what a button looks like; the server decides what happens. */
+const WRITE = {People:5,Owners:4,Properties:4,Checklist:4,Incentives:4,ClockIns:4,
+  Tasks:4,Issues:4,Performance:4,Mistakes:4,GuestFeedback:4,
+  Income:4,Expenses:4,Refunds:4,Funds:4,CheckDone:1};
+const PRIMARY = 5;
+/* An admin still manages the directory; only the password and the role
+   are out of reach, and both are handled on the server. */
+const canPeople = () => can(4);
+/* Roles that are not onsite staff, for the roster counts and pickers. */
+const TOPROLE = r => r === 'Admin' || r === 'HostPro';
 const can  = lvl => !!ME && ME.level >= lvl;
 const canW = t => can(WRITE[t]||4);
 
@@ -870,7 +1064,17 @@ const HAS_GSR = (typeof google!=='undefined' && google.script && google.script.r
 /* The workspace this app talks to. Baked in so no one on the team is ever
    asked for a link — they open it and go straight to signing in. If you ever
    redeploy to a different script, change it here. */
-const BAKED_URL = 'https://script.google.com/macros/s/AKfycbyC_sOt3Btj-8vnNIT2X_nTqUbm6x0QVkVC8t3GmwHdeOmrZOv8SBDdI03fpyDLklIJsg/exec';
+const GS_EXEC_URL = 'https://script.google.com/macros/s/AKfycbyC_sOt3Btj-8vnNIT2X_nTqUbm6x0QVkVC8t3GmwHdeOmrZOv8SBDdI03fpyDLklIJsg/exec';
+/* Where the app sends its API calls.
+   Installed Android shell -> straight to Apps Script, because Capacitor
+     makes the request natively and there is no origin to share.
+   Anywhere else (Cloudflare, a laptop, an iPhone home screen) -> the
+     same-origin proxy at /api/exec, so no CORS question ever arises.
+   Served by Apps Script itself -> neither is used; google.script.run
+     takes over and API_URL is ignored. */
+const IS_NATIVE_SHELL = !!(window.Capacitor && window.Capacitor.isNativePlatform
+  && window.Capacitor.isNativePlatform());
+const BAKED_URL = IS_NATIVE_SHELL ? GS_EXEC_URL : '/api/exec';
 let API_URL = '';
 try{ API_URL = localStorage.getItem('hostpro_srv') || ''; }catch(e){}
 if(!API_URL && BAKED_URL) API_URL = BAKED_URL;
@@ -886,7 +1090,20 @@ function call(fn){
 function setSync(state, msg){
   const el = $('sync');
   el.className = 'sync' + (state==='ok'?' sync--ok':state==='off'?' sync--off':'');
-  $('syncTxt').textContent = msg;
+  /* On a phone the full sentence has nowhere to go, so a short form is
+     shown instead — a bare coloured dot tells you nothing about whether
+     the app is saving, waiting or offline. The full text stays as the
+     tooltip and on anything wider. */
+  const short = /offline/i.test(msg) ? 'Offline'
+              : /saving/i.test(msg) ? 'Saving'
+              : /loading|starting/i.test(msg) ? 'Loading'
+              : /checking/i.test(msg) ? 'Checking'
+              : /no connection/i.test(msg) ? 'No signal'
+              : /synced/i.test(msg) ? msg.replace(/^Synced\s*/i,'').trim() || 'Synced'
+              : msg;
+  const t = $('syncTxt');
+  t.textContent = (window.innerWidth <= 430) ? short : msg;
+  t.title = msg;
 }
 
 /* ---------- pull / save ---------- */
@@ -917,12 +1134,39 @@ async function poll(){
 }
 /** Saves are confirmed by the Sheet before the screen updates, so what you
     see is always what your teammates will see. */
+/* Apply the server's own copy of a row to the table we already hold,
+   rather than re-downloading all sixteen tables to see one change.
+
+   Saving used to cost two round trips: the save itself, then a full pull
+   of every table — hundreds of income rows included — just to redraw one
+   edit. On a phone that was the ten seconds. The server hands back the
+   finished row, stamped and totalled, so it is applied locally and the
+   screen redraws at once. The next poll reconciles anything a colleague
+   changed in the meantime. */
+function applyRow(table, row){
+  if(!row || !D || !Array.isArray(D[table])) return false;
+  const i = D[table].findIndex(r => r.id === row.id);
+  if(i > -1) D[table][i] = row; else D[table].push(row);
+  try{ localStorage.setItem('hostpro_cache', JSON.stringify(D)); }catch(e){}
+  return true;
+}
+function dropRow(table, id){
+  if(!D || !Array.isArray(D[table])) return false;
+  const i = D[table].findIndex(r => r.id === id);
+  if(i > -1) D[table].splice(i, 1);
+  try{ localStorage.setItem('hostpro_cache', JSON.stringify(D)); }catch(e){}
+  return true;
+}
 async function save(table, row, msg){
   setSync('sync','Saving');
   try{
     const r = await call('apiSave', AUTH, table, row);
     if(!r || !r.ok){ toast('Not saved — ' + ((r&&r.error)||'no response'), 6000); setSync('off','Save failed'); return null; }
-    REV = r.rev; await pull(true);
+    REV = r.rev;
+    /* Only fall back to a full pull if the local copy could not be
+       updated — a fresh session, say, where D is not populated yet. */
+    if(applyRow(table, r.row)){ buildNav(); renderAll(); setSync('ok','Synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})); }
+    else await pull(true);
     if(msg) toast(msg);
     return r.row;
   }catch(e){ toast('Not saved — no connection to the workspace.', 6000); setSync('off','Offline'); return null; }
@@ -933,7 +1177,10 @@ async function del(table, id, confirmMsg){
   try{
     const r = await call('apiDelete', AUTH, table, id);
     if(!r || !r.ok){ toast('Not removed — ' + ((r&&r.error)||'no response'), 6000); setSync('off','Failed'); return false; }
-    REV = r.rev; await pull(true); toast('Removed.'); return true;
+    REV = r.rev;
+    if(dropRow(table, id)){ buildNav(); renderAll(); setSync('ok','Synced ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})); }
+    else await pull(true);
+    toast('Removed.'); return true;
   }catch(e){ toast('Not removed — no connection.', 6000); return false; }
 }
 
@@ -966,10 +1213,10 @@ async function loadNames(){
   try{
     const r = await call('apiWhoCanSignIn');
     if(r && r.ok){
-      const groups = {Admin:[], Manager:[], Staff:[]};
+      const groups = {HostPro:[], Admin:[], Manager:[], Staff:[]};
       r.people.forEach(p => { (groups[p.role] || groups.Staff).push(p.name); });
-      const label = {Admin:'HostPro & owners', Manager:'Onsite managers', Staff:'Onsite team'};
-      $('inUser').innerHTML = ['Admin','Manager','Staff'].filter(k=>groups[k].length)
+      const label = {HostPro:'Primary account', Admin:'HostPro & owners', Manager:'Onsite managers', Staff:'Onsite team'};
+      $('inUser').innerHTML = ['HostPro','Admin','Manager','Staff'].filter(k=>groups[k].length)
         .map(k => `<optgroup label="${label[k]}">` +
           groups[k].map(n=>`<option>${esc(n)}</option>`).join('') + '</optgroup>').join('');
     } else $('inErr').textContent = (r && r.error) || 'Could not load the sign-in list.';
@@ -1003,11 +1250,20 @@ const NAV = [
   {id:'g-dash', label:'Overview', pages:[['dash','Overview']]},
   {id:'g-ops',  label:'Operations', pages:[['issues','Slack Issues',3],['tasks','Tasks'],
       ['check','Checklists'],['clock','Clock-in'],['guest','Guest Feedback',3]]},
-  {id:'g-team', label:'Team', min:3, pages:[['people','Directory'],['perf','Performance'],
+  /* Team and Admin are admin-only. A manager could previously browse
+     everyone's ratings, mistakes and the full directory — read-only, but
+     visible. Revenue stays at 3 because the server already narrows it to
+     the properties that manager covers. */
+  {id:'g-team', label:'Team', min:4, pages:[['people','Directory'],['perf','Performance'],
       ['mistakes','Mistakes'],['incentives','Incentives',4]]},
-  {id:'g-money',label:'Revenue', min:3, pages:[['bookings','Bookings'],['expenses','Expenses'],
+  /* Revenue is admin-only. It used to be level 3 with the server narrowing
+     each table to the properties that manager covered — they still saw the
+     money for their own cluster. Now they see none of it: no bookings, no
+     expenses, no refunds, and no field-fund flow. READ_TIER in Code.gs is
+     the real gate; this only decides whether the tab is drawn. */
+  {id:'g-money',label:'Revenue', min:4, pages:[['bookings','Bookings'],['expenses','Expenses'],
       ['refunds','Refunds'],['funds','Field Funds'],['reports','Reports',4]]},
-  {id:'g-admin',label:'Admin', min:3, pages:[['props','Properties'],['logins','Logins',4],['settings','Categories']]}
+  {id:'g-admin',label:'Admin', min:4, pages:[['props','Properties'],['logins','Logins',5],['settings','Categories']]}
 ];
 let curGroup='g-dash', curPage='dash';
 function buildNav(){
@@ -1051,7 +1307,7 @@ const ownerOf  = pid => { const p = propById(pid); return p ? ownerById(p.ownerI
 const everyone = () => T('People').filter(p=>p.status!=='Inactive').map(p=>p.name).sort();
 const managers = () => T('People').filter(p=>p.role==='Manager');
 const holders  = () => T('People').filter(p=>String(p.fundHolder).toLowerCase()==='yes'||p.role==='Manager');
-const fieldTeam= () => T('People').filter(p=>p.role!=='Admin'&&p.status!=='Inactive').map(p=>p.name).sort();
+const fieldTeam= () => T('People').filter(p=>!TOPROLE(p.role)&&p.status!=='Inactive').map(p=>p.name).sort();
 const refundsOf= id => T('Refunds').filter(r=>r.incomeId===id);
 const refunded = id => refundsOf(id).reduce((s,r)=>s+(Number(r.amount)||0),0);
 const isDirect = c => /direct|whatsapp|instagram/i.test(String(c||''));
@@ -1061,9 +1317,9 @@ function hay(){ return [].slice.call(arguments).map(x=>String(x==null?'':x)).joi
 function hit(ts,h){ return ts.every(t=>h.indexOf(t)>-1); }
 
 const PILL = {Pending:'warn','In Progress':'info',Done:'good',Open:'bad',Acknowledged:'warn',
-  Resolved:'good',Major:'bad',Moderate:'warn',Minor:'flat',Excellent:'good',Good:'good',
+  Escalated:'bad',Closed:'good',Resolved:'good',Major:'bad',Moderate:'warn',Minor:'flat',Excellent:'good',Good:'good',
   Average:'flat','Below Average':'warn',Poor:'bad',Active:'good',Training:'warn',Inactive:'flat',
-  Bonus:'good',Deduction:'bad',Admin:'accent',Manager:'info',Staff:'flat'};
+  Bonus:'good',Deduction:'bad',HostPro:'accent',Admin:'accent',Manager:'info',Staff:'flat'};
 const pill = s => `<span class="pill pill--${PILL[s]||'flat'}">${esc(s)}</span>`;
 const priPill = p => `<span class="pill pill--${String(p).indexOf('P1')===0?'bad':String(p).indexOf('P2')===0?'warn':'flat'}">${esc(p)}</span>`;
 const sel = (t,id,f,opts,cur) => `<select class="inline" data-t="${t}" data-id="${id}" data-f="${f}">` +
@@ -1077,6 +1333,14 @@ const rm = (t,id) => `<button class="mini mini--danger" data-del="${t}" data-id=
 function fill(el, arr, def){ if(!el) return; const cur = el.value;
   el.innerHTML = arr.map(x=>`<option>${esc(x)}</option>`).join('');
   if(arr.indexOf(cur)>-1) el.value = cur; else if(def && arr.indexOf(def)>-1) el.value = def; }
+/* A filter dropdown whose first entry means "no filter". Unlike fill, the
+   blank stays selected until the person picks something, and their choice
+   survives a re-render. */
+function keepPick(id, arr, blankLabel){ const el = $(id); if(!el) return;
+  const cur = el.value;
+  el.innerHTML = `<option value="">${esc(blankLabel)}</option>` +
+    arr.map(x=>`<option>${esc(x)}</option>`).join('');
+  if(cur && [].some.call(el.options, o=>o.value===cur)) el.value = cur; }
 function fillKV(el, arr, blank){ if(!el) return; const cur = el.value;
   el.innerHTML = (blank?`<option value="">${esc(blank)}</option>`:'') +
     arr.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('');
@@ -1117,6 +1381,11 @@ function statCards(el, cards){
 
 /* ══════════ OVERVIEW ══════════ */
 function renderDash(){
+  const inst = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+  $('whoInfo').innerHTML = 'Signed in as <b>' + esc(ME.name) + '</b> (' + esc(ME.role) + '). ' +
+    (inst ? 'Running as an installed app.'
+          : 'Not installed yet — use your browser menu, then “Add to Home Screen” or “Install”.');
+
   const iss = T('Issues').filter(inM);
   const resp = iss.filter(i=>i.responded).length;
   const rate = iss.length ? Math.round(resp/iss.length*1000)/10 : null;
@@ -1128,9 +1397,9 @@ function renderDash(){
     ['Unanswered 24h+', stale.length, stale.length?'bad':'good'],
     ['Open tasks', openTasks.length, openTasks.length?'warn':'good'],
     ['Properties', T('Properties').length, ''],
-    ['Onsite team', T('People').filter(p=>p.role!=='Admin'&&p.status==='Active').length, '']
+    ['Onsite team', T('People').filter(p=>!TOPROLE(p.role)&&p.status==='Active').length, '']
   ];
-  if(can(3)){
+  if(can(4)){
     const inc = T('Income').filter(inM), exp = T('Expenses').filter(inM), rf = T('Refunds').filter(inM);
     const ti = inc.reduce((s,r)=>s+(Number(r.total)||0),0);
     const te = exp.reduce((s,r)=>s+(Number(r.usd)||0),0);
@@ -1148,7 +1417,7 @@ function renderDash(){
     alerts.push('<div class="note note--warn">Slack has never synced. Add SLACK_BOT_TOKEN in Apps Script and run installTriggers.</div>');
   }
   if(stale.length) alerts.push(`<div class="note note--bad">${stale.length} issue${stale.length>1?'s have':' has'} gone over 24 hours with no reply from the person accountable.</div>`);
-  if(can(3)){
+  if(can(4)){
     const noProof = T('Income').filter(inM).filter(r=>proofOf(r)===PROOF_NO).length;
     if(noProof) alerts.push(`<div class="note">${noProof} booking${noProof>1?'s':''} this month still ${noProof>1?'have':'has'} no payment proof attached.</div>`);
   }
@@ -1190,8 +1459,8 @@ function renderDash(){
       <td class="r num">${byProp[p].major?'<span style="color:var(--bad);font-weight:600">'+byProp[p].major+'</span>':'0'}</td></tr>`),
     'No issues logged this month.');
 
-  $('dMoneyPanel').classList.toggle('hidden', !can(3));
-  if(can(3)) renderOwnerTable('dOwner');
+  $('dMoneyPanel').classList.toggle('hidden', !can(4));
+  if(can(4)) renderOwnerTable('dOwner');
 }
 function gradePill(r){
   return r>=80 ? '<span class="pill pill--good">Strong</span>'
@@ -1250,7 +1519,7 @@ function renderIssues(){
   const ms = all.filter(i=>i.responseMins!=null&&i.responseMins!==''&&Number(i.responseMins)>=0).map(i=>Number(i.responseMins));
   const avg = ms.length ? Math.round(ms.reduce((a,b)=>a+b,0)/ms.length) : null;
   const stale = all.filter(i=>!i.responded && ageMs(i)>864e5).length;
-  const major = all.filter(i=>i.severity==='Major' && i.status!=='Resolved').length;
+  const major = all.filter(i=>i.severity==='Major' && stateOf(i)!=='Closed').length;
   statCards('issStats', [
     ['Issues logged', all.length, ''], ['Responded', resp, 'good'],
     ['Response rate', rate+'%', rate>=70?'good':rate>=40?'warn':'bad'],
@@ -1310,33 +1579,105 @@ function renderIssues(){
   fill($('issMgr'), [''].concat(managers().map(m=>m.name)));
   $('issMgr').options[0].text = 'All managers'; $('issMgr').options[0].value = '';
   const ts = terms('issSearch'), fm = $('issMgr').value, fs = $('issStat').value, fv = $('issSev').value;
+  const fst = $('issState').value, fo = $('issOut').value;
   let rows = all.slice().sort((a,b)=>String((b.date||'')+(b.time||'')).localeCompare(String((a.date||'')+(a.time||''))));
   if(fm) rows = rows.filter(i=>i.manager===fm);
+  if(fst) rows = rows.filter(i=>stateOf(i)===fst);
   if(fs) rows = rows.filter(i=>i.status===fs);
+  if(fo) rows = rows.filter(i=>i.outcome===fo);
   if(fv) rows = rows.filter(i=>i.severity===fv);
-  if(ts.length) rows = rows.filter(i=>hit(ts, hay(i.text,i.property,i.manager,i.reportedBy,i.category,i.cluster)));
-  tbl('issTbl', ['Reported','Property','Accountable','Issue','Category','Severity','Reply','Status',''],
+  if(ts.length) rows = rows.filter(i=>hit(ts, hay(i.text,i.property,i.manager,i.reportedBy,i.category,i.cluster,i.outcome,i.notes)));
+  tbl('issTbl', ['Reported','Property','Accountable','Issue','Severity','Reply','Open / closed',
+      'Stage','Outcome','Notes',''],
     rows.slice(0,400).map(function(i){
       const late = !i.responded && ageMs(i) > 864e5;
       const reply = i.responded
         ? `<span class="pill pill--good">${esc(i.responder||'replied')}</span><div class="muted">${mins(i.responseMins)}</div>`
         : late ? '<span class="pill pill--bad">No reply 24h+</span>' + (i.otherReplier?`<div class="muted">${esc(i.otherReplier)} replied</div>`:'')
         : '<span class="pill pill--warn">Awaiting</span>' + (i.otherReplier?`<div class="muted">${esc(i.otherReplier)} replied</div>`:'');
+      const st = stateOf(i);
+      const note = String(i.notes||'');
       return `<tr><td class="num" style="white-space:nowrap">${esc(i.date)}
           <div class="muted">${esc(i.time)} · ${esc(i.reportedBy)}</div></td>
-        <td>${esc(i.property)}</td><td class="strong">${esc(i.manager||'—')}</td>
-        <td style="max-width:340px">${esc(i.text)}</td><td>${esc(i.category)}</td>
+        <td>${esc(i.property)}<div class="muted">${esc(i.category||'')}</div></td>
+        <td class="strong">${esc(i.manager||'—')}</td>
+        <td style="max-width:300px">${esc(i.text)}</td>
         <td>${pill(i.severity)}</td><td>${reply}</td>
-        <td>${canW('Issues')?sel('Issues',i.id,'status',['Open','Acknowledged','Resolved'],i.status):pill(i.status)}</td>
-        <td>${can(4)?rm('Issues',i.id):''}</td></tr>`;
+        <td><span class="pill pill--${st==='Closed'?'good':'warn'}">${esc(st)}</span></td>
+        <td>${st==='Closed'?'<span class="muted">—</span>':pill(i.status||'Open')}</td>
+        <td>${i.outcome?`<span class="pill pill--info">${esc(i.outcome)}</span>`:'<span class="muted">—</span>'}</td>
+        <td class="muted" style="max-width:240px">${note ? esc(note.slice(0,110)) + (note.length>110?'…':'') : '—'}
+          ${i.updBy?`<div class="muted" style="font-size:11.5px">— ${esc(i.updBy)}</div>`:''}</td>
+        <td style="white-space:nowrap">${canIssue()?`<button class="mini mini--go" data-editiss="${i.id}">Update</button>`:''}
+          ${can(4)?rm('Issues',i.id):''}</td></tr>`;
     }), 'No issues match these filters in ' + monthLabel(curMonth) + '.');
 }
+/* Rows created before this change have no state column at all. Anything
+   already marked Resolved reads as Closed; everything else is Open. That
+   keeps the old records meaningful without a migration pass. */
+function stateOf(i){
+  if(i.state === 'Closed' || i.state === 'Open') return i.state;
+  return i.status === 'Resolved' ? 'Closed' : 'Open';
+}
+/* Managers update issues on their own properties — guardSave_ allows exactly
+   that, and they are the ones doing the resolving. */
+const canIssue = () => canW('Issues') || (ME && ME.level === 3);
+
+/* ---------- the issue update modal ---------- */
+const ISSUE_STAGES   = ['Open','Acknowledged','Escalated','In Progress','Resolved'];
+const ISSUE_OUTCOMES = ['Issue resolved','Relocated','Discount offered on future stay',
+                        'Compensation','Refunded'];
+let issFor = null;
+function issSync(){
+  /* Closed cases keep whatever stage they finished on, but there is nothing
+     left to move along, so the picker is put away. The outcome appears the
+     moment the work is resolved — that is the question the team is being
+     asked, and asking it earlier would only invite a guess. */
+  const closed = $('isState').value === 'Closed';
+  $('isStageWrap').classList.toggle('hidden', closed);
+  $('isOutWrap').classList.toggle('hidden', !(closed || $('isStage').value === 'Resolved'));
+}
+function openIssue(id){
+  const i = T('Issues').filter(x=>x.id===id)[0]; if(!i) return;
+  issFor = id;
+  $('mIssTitle').textContent = 'Update — ' + (i.property || 'unmatched property');
+  $('mIssSummary').innerHTML = `Reported ${esc(i.date)} ${esc(i.time||'')} by <b>${esc(i.reportedBy||'someone')}</b>` +
+    ` · ${esc(i.severity||'')} · accountable: <b>${esc(i.manager||'nobody')}</b><br>${esc(i.text||'')}`;
+  $('isErr').textContent = '';
+  $('isState').value = stateOf(i);
+  $('isStage').value = ISSUE_STAGES.indexOf(i.status) > -1 ? i.status : 'Open';
+  $('isOut').value   = ISSUE_OUTCOMES.indexOf(i.outcome) > -1 ? i.outcome : '';
+  $('isNotes').value = i.notes || '';
+  $('isWho').textContent = i.updBy ? 'Last updated by ' + i.updBy + (i.updAt ? ' on ' + i.updAt : '') + '.' : '';
+  issSync();
+  $('mIss').classList.remove('hidden');
+}
+$('isState').addEventListener('change', issSync);
+$('isStage').addEventListener('change', issSync);
+$('isCancel').onclick = () => { $('mIss').classList.add('hidden'); issFor = null; };
+$('isSave').onclick = async () => {
+  if(!issFor) return;
+  const orig = T('Issues').filter(x=>x.id===issFor)[0]; if(!orig) return;
+  const state = $('isState').value;
+  const stage = state === 'Closed' ? (orig.status || 'Resolved') : $('isStage').value;
+  const wantOut = state === 'Closed' || stage === 'Resolved';
+  if(wantOut && !$('isOut').value){
+    $('isErr').textContent = 'Pick how it was resolved before closing it.'; return;
+  }
+  const row = {}; for(const k in orig) row[k] = orig[k];
+  row.state = state;
+  row.status = stage;
+  row.outcome = wantOut ? $('isOut').value : '';
+  row.notes = $('isNotes').value.trim();
+  const ok = await save('Issues', row, 'Issue updated.');
+  if(ok){ $('mIss').classList.add('hidden'); issFor = null; }
+};
 document.addEventListener('click', e => {
   const tr = e.target.closest('#issTrend tr[data-month]'); if(!tr) return;
   curMonth = tr.dataset.month; renderMonthBar(); renderAll();
 });
 ['issSearch'].forEach(id=>$(id).addEventListener('input', ()=>renderIssues()));
-['issMgr','issStat','issSev'].forEach(id=>$(id).addEventListener('change', ()=>renderIssues()));
+['issMgr','issStat','issSev','issState','issOut'].forEach(id=>$(id).addEventListener('change', ()=>renderIssues()));
 
 /* ══════════ TASKS ══════════ */
 function renderTasks(){
@@ -1441,20 +1782,37 @@ function renderClock(){
     : 'You have not clocked in today.';
   $('ciNow').disabled = !!mineToday;
   const todayN = all.filter(c=>c.date===today).length;
-  const roster = T('People').filter(p=>p.role!=='Admin'&&p.status==='Active').length;
+  const roster = T('People').filter(p=>!TOPROLE(p.role)&&p.status==='Active').length;
   statCards('ciStats', [['Clocked in today', todayN, todayN?'good':'warn'],
     ['Onsite roster', roster, ''],
     ['Logged this month', all.length, ''],
-    ['People tracked', Object.keys(all.reduce((a,c)=>{a[c.emp]=1;return a;},{})).length, '']]);
+    ['Late arrivals', all.filter(c=>Number(c.lateMins)>0).length,
+      all.filter(c=>Number(c.lateMins)>0).length ? 'bad' : 'good']]);
   fill($('ciWho'), [''].concat(everyone()));
   $('ciWho').options[0].text = 'Everyone'; $('ciWho').options[0].value = '';
   const f = $('ciWho').value;
   const rows = all.filter(c=>!f||c.emp===f)
     .sort((a,b)=>String(b.date+b.time).localeCompare(String(a.date+a.time)));
-  tbl('ciTbl', ['Date','Person','Role','Time',''],
-    rows.slice(0,300).map(c=>`<tr><td class="num">${esc(c.date)}</td><td>${esc(c.emp)}</td>
-      <td class="muted">${esc(c.role||'')}</td><td class="num">${esc(c.time)}</td>
-      <td>${can(4)?rm('ClockIns',c.id):''}</td></tr>`), 'No clock-ins this month.');
+  /* Late is measured against the start time an admin set for that person.
+     There is no grace: 08:01 against an 08:00 start is one minute late.
+     Someone with no start time set shows a dash rather than "on time",
+     because nothing was expected of them. */
+  const lateOf = c => (c.lateMins === '' || c.lateMins === null || c.lateMins === undefined)
+    ? null : Number(c.lateMins);
+  const lateCount = rows.filter(c => lateOf(c) > 0).length;
+  tbl('ciTbl', ['Date','Person','Role','Expected','Clocked in','Late by',''],
+    rows.slice(0,300).map(function(c){
+      const L = lateOf(c);
+      const cell = L === null ? '<span class="muted">—</span>'
+        : L > 0 ? `<span class="badge badge--bad">${L} min</span>`
+                : '<span class="badge badge--good">On time</span>';
+      return `<tr><td class="num">${esc(c.date)}</td><td>${esc(c.emp)}</td>
+      <td class="muted">${esc(c.role||'')}</td><td class="num muted">${esc(c.expected||'—')}</td>
+      <td class="num">${esc(c.time)}</td><td>${cell}</td>
+      <td>${can(4)?rm('ClockIns',c.id):''}</td></tr>`;
+    }), 'No clock-ins this month.');
+  const lateStat = document.getElementById('ciLate');
+  if(lateStat) lateStat.textContent = lateCount;
 }
 $('ciNow').onclick = async () => {
   setSync('sync','Clocking in');
@@ -1499,7 +1857,12 @@ $('gfSave').onclick = async () => {
 
 /* ══════════ DIRECTORY ══════════ */
 function renderPeople(){
-  $('peAdd').classList.toggle('hidden', !canW('People'));
+  $('peAdd').classList.toggle('hidden', !canPeople());
+  /* An admin adds the person; the HostPro account gives them a password
+     from Logins. The server blanks row.pw below level 5 either way, so
+     leaving the box visible would just be a lie. */
+  $('pePwWrap').classList.toggle('hidden', !can(PRIMARY));
+  $('peNoPw').classList.toggle('hidden', can(PRIMARY));
   const all = T('People');
   statCards('peStats', [['Admins', all.filter(p=>p.role==='Admin').length, ''],
     ['Onsite managers', all.filter(p=>p.role==='Manager').length, ''],
@@ -1511,7 +1874,10 @@ function renderPeople(){
     .filter(p=>!fr||p.role===fr)
     .filter(p=>!ts.length||hit(ts, hay(p.name,p.role,p.title,p.org,p.contact,propsOf(p.id).join(' '))))
     .sort((a,b)=>String(a.role).localeCompare(String(b.role))||String(a.name).localeCompare(String(b.name)));
-  tbl('peTbl', ['Name','Access','Title','Covers / reports to','Contact','Status',''],
+  /* Starts at is the time this person is expected to clock in. Admins and
+     the primary account set it; everyone else sees it as text. Leave it
+     blank and nothing is expected of them, so they can never be late. */
+  tbl('peTbl', ['Name','Access','Title','Covers / reports to','Contact','Starts at','Status',''],
     rows.map(function(p){
       const covers = p.role === 'Manager'
         ? (propsOf(p.id).slice(0,4).join(', ') + (propsOf(p.id).length>4?' +'+(propsOf(p.id).length-4):'') || '—')
@@ -1520,6 +1886,10 @@ function renderPeople(){
         <td class="muted">${esc(p.title||p.position||'—')}</td>
         <td class="muted" style="max-width:280px">${esc(covers)}</td>
         <td class="muted">${esc(p.contact||'—')}</td>
+        <td>${can(4)
+          ? `<input class="inline" type="time" style="width:110px" data-t="People" data-id="${p.id}"
+               data-f="shiftStart" value="${esc(p.shiftStart||'')}">`
+          : `<span class="muted">${esc(p.shiftStart||'—')}</span>`}</td>
         <td>${can(4)?sel('People',p.id,'status',['Active','Training','Inactive'],p.status):pill(p.status)}</td>
         <td>${can(4)?rm('People',p.id):''}</td></tr>`;
     }), 'Nobody matches.');
@@ -1545,6 +1915,31 @@ $('peFilter').addEventListener('change', renderPeople);
 const RATING_SCORE = {Excellent:5, Good:4, Average:3, 'Below Average':2, Poor:1};
 function renderPerf(){
   $('pfAdd').classList.toggle('hidden', !canW('Performance'));
+
+  /* Red flags for the month, worst offender first. Managers only ever
+     receive their own — the server filters the table before it is sent. */
+  const flags = T('RedFlags').filter(inM);
+  const byEmp = {};
+  flags.forEach(function(f){ (byEmp[f.emp] = byEmp[f.emp] || []).push(f); });
+  const names = Object.keys(byEmp).sort(function(a,b){ return byEmp[b].length - byEmp[a].length; });
+  if(!flags.length){
+    $('rfTbl').innerHTML = `<tr><td class="muted">No red flags this month${
+      can(4) ? '' : ' — nothing outstanding against you.'}</td></tr>`;
+  } else {
+    let h = `<tr><th>Person</th><th>Flags</th><th>What happened</th><th>Deadline</th><th>Raised</th></tr>`;
+    names.forEach(function(n){
+      const list = byEmp[n].slice().sort(function(a,b){ return String(b.due).localeCompare(String(a.due)); });
+      h += `<tr class="grouped"><td class="strong">${esc(n)}</td>
+            <td><span class="badge badge--bad">${list.length}</span></td><td colspan="3"></td></tr>`;
+      list.forEach(function(f){
+        h += `<tr><td></td><td class="muted">${esc(f.kind)}</td>
+              <td>${esc(f.detail||'')}</td><td class="muted">${esc(f.due||'')}</td>
+              <td class="muted">${esc(f.date||'')}</td></tr>`;
+      });
+    });
+    $('rfTbl').innerHTML = h;
+  }
+
   const all = T('Performance').filter(inM);
   const by = {};
   all.forEach(function(p){ if(!by[p.emp]) by[p.emp] = {n:0, sum:0, low:0};
@@ -1613,7 +2008,7 @@ function renderIncentives(){
   if(!allowed) return;
   const all = T('Incentives').filter(inM);
   const by = {};
-  T('People').filter(p=>p.role!=='Admin').forEach(function(p){
+  T('People').filter(p=>!TOPROLE(p.role)).forEach(function(p){
     by[p.name] = {base:Number(p.salary)||0, cur:p.currency||'GHS', bonus:0, ded:0}; });
   all.forEach(function(x){
     const s = by[x.emp] = by[x.emp] || {base:0, cur:x.currency||'GHS', bonus:0, ded:0};
@@ -1658,11 +2053,15 @@ function recalcBooking(){
 $('bPay').addEventListener('change', recalcBooking);
 function renderBookings(){
   $('bkAdd').classList.toggle('hidden', !canW('Income'));
+  keepPick('bkPay', D.payChannels||[], 'All payment channels');
   const all = T('Income').filter(inM);
   const ts = terms('bkSearch'), fo = $('bkOwner').value, fc = $('bkChan').value, fp = $('bkProof').value;
+  const fpay = $('bkPay').value, fver = $('bkVer').value;
   const rows = all
     .filter(r=>{ if(!fo) return true; const o = ownerOf(r.propId); return o && o.id===fo; })
     .filter(r=>!fc||r.channel===fc).filter(r=>!fp||proofOf(r)===fp)
+    .filter(r=>!fpay||String(r.payChannel||'')===fpay)
+    .filter(r=>!fver||(fver==='Yes' ? String(r.verified)==='Yes' : String(r.verified)!=='Yes'))
     .filter(r=>{ if(!ts.length) return true;
       return hit(ts, hay(propName(r.propId), r.guest, r.bookingId, r.channel, r.payChannel, r.notes, r.bookedBy)); })
     .sort((a,b)=>String(a.checkIn).localeCompare(String(b.checkIn)));
@@ -1677,8 +2076,10 @@ function renderBookings(){
   $('bkUnlinked').classList.toggle('hidden', !unlinked);
   if(unlinked) $('bkUnlinked').innerHTML = `${unlinked} booking${unlinked>1?'s have':' has'} no property attached — ` +
     'mostly rows carried over from the old revenue log, where only a name was stored. Open one and pick its property so it counts toward the right owner.';
+  /* Status, Notes and Added by bring this in line with the old Rental
+     Ledger, where the team relied on all three. */
   tbl('bkTbl', ['Property','Guest','Channel','Closed by','Paid via','Check-in','Nights','#Income',
-      '#Stripe','#Total','Proof','#Refunded',''],
+      '#Stripe','#Total','Status','Proof','#Refunded','Notes','Added by',''],
     rows.map(function(r){ const p = propById(r.propId), sf = Number(r.stripeFee)||0, rr = refunded(r.id);
       const pf = proofOf(r);
       return `<tr><td>${p?esc(p.name):'<span class="pill pill--warn">no property</span>'}</td>
@@ -1688,8 +2089,12 @@ function renderBookings(){
         <td class="r num">$${fmt(r.income)}</td>
         <td class="r num" style="color:${sf?'var(--accent)':'inherit'}">${sf?'$'+fmt(sf):'—'}</td>
         <td class="r num strong">$${fmt(r.total)}</td>
+        <td><span class="pill pill--${String(r.verified)==='Yes'?'good':'warn'}">${
+          String(r.verified)==='Yes'?'Verified':'Un-Verified'}</span></td>
         <td><span class="pill pill--${pf===PROOF_YES?'good':'warn'}">${pf===PROOF_YES?'In':'Missing'}</span></td>
         <td class="r num" style="color:${rr?'var(--bad)':'inherit'}">${rr?'−$'+fmt(rr):'—'}</td>
+        <td class="muted" style="max-width:240px">${esc(r.notes||'—')}</td>
+        <td class="muted">${esc(r.by||'—')}</td>
         <td style="white-space:nowrap">${canW('Refunds')?`<button class="mini mini--go" data-refund="${r.id}">Refund</button>`:''}
           ${canW('Income')?`<button class="mini mini--go" data-editinc="${r.id}">Edit</button>`+rm('Income',r.id):''}</td></tr>`;
     }), 'No bookings match.');
@@ -1914,7 +2319,7 @@ $('owSave').onclick = async () => {
 
 /* ══════════ LOGINS ══════════ */
 function renderLogins(){
-  const allowed = can(4);
+  const allowed = can(PRIMARY);
   $('lgWall').classList.toggle('hidden', allowed);
   $('lgBody').classList.toggle('hidden', !allowed);
   if(!allowed) return;
@@ -1926,14 +2331,21 @@ function renderLogins(){
       const detail = p.role==='Manager'
         ? (T('Properties').filter(x=>x.managerId===p.id).map(x=>x.name).slice(0,3).join(', ')||'no properties yet')
         : [p.title,p.org].filter(Boolean).join(' · ') || '—';
+      const isPrimary = p.role === 'HostPro';
       rows.push(`<tr><td class="strong">${esc(p.name)}</td><td class="muted">${esc(detail)}</td>
         <td>${pill(p.role)}</td>
-        <td>${sel('People',p.id,'role',['Admin','Manager','Staff'],p.role)}</td>
+        <td>${isPrimary ? '<span class="muted">Cannot be changed</span>'
+                        : sel('People',p.id,'role',['Admin','Manager','Staff'],p.role)}</td>
         <td><input class="inline" type="${maskPw?'password':'text'}" style="width:150px;font-family:ui-monospace,monospace"
              data-t="People" data-id="${p.id}" data-f="pw" value="${esc(p.pw||'')}" placeholder="set a password"></td>
-        <td>${rm('People',p.id)}</td></tr>`);
+        <td>${isPrimary ? '' : rm('People',p.id)}</td></tr>`);
     });
   };
+  /* The primary account goes first and its role is fixed. Demoting it —
+     or deleting it — would leave nobody able to reach this screen, and
+     the only way back would be the Apps Script editor. The server blocks
+     both as well; this just stops anyone trying. */
+  group('Primary account', T('People').filter(p=>p.role==='HostPro'));
   group('HostPro & owners', T('People').filter(p=>p.role==='Admin'));
   group('Onsite managers', T('People').filter(p=>p.role==='Manager'));
   group('Onsite team',     T('People').filter(p=>p.role==='Staff'));
@@ -1954,6 +2366,11 @@ function renderSettings(){
   $('tagPay').innerHTML  = tagRow('PayChannels', D.payChannels||[]);
   $('tagCat').innerHTML  = tagRow('Categories', D.categories||[]);
   const installed = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+
+  /* Only the primary account sees the workspace itself — the link, the
+     backup, the Slack pull and the diagnostics. */
+  $('devPanel').classList.toggle('hidden', !can(PRIMARY));
+  if(!can(PRIMARY)) return;
   $('devInfo').innerHTML = 'Signed in as <b>' + esc(ME.name) + '</b> (' + esc(ME.role) + '). ' +
     (HAS_GSR ? 'Opened from Apps Script.' : 'Connected to ' + esc(API_URL.split('://').pop().slice(0,46)) + '…') +
     (installed ? ' Running as an installed app.' : ' Not installed yet — use your browser menu, then “Add to Home Screen” or “Install”.');
@@ -2058,6 +2475,7 @@ document.addEventListener('click', e => {
   const r = e.target.closest('[data-refund]');  if(r) return openRefund(r.dataset.refund);
   const i = e.target.closest('[data-editinc]'); if(i) return openEdit('Income', i.dataset.editinc);
   const x = e.target.closest('[data-editexp]'); if(x) return openEdit('Expenses', x.dataset.editexp);
+  const s = e.target.closest('[data-editiss]'); if(s) return openIssue(s.dataset.editiss);
 });
 
 /* ══════════ EDIT MODAL ══════════ */
@@ -2139,7 +2557,7 @@ $('mEditSave').onclick = async () => {
   if(ok){ $('mEdit').classList.add('hidden'); editCtx = null; }
 };
 document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => {
-  if(e.target === m){ m.classList.add('hidden'); editCtx = null; refFor = null; } }));
+  if(e.target === m){ m.classList.add('hidden'); editCtx = null; refFor = null; issFor = null; } }));
 
 /* ══════════ OWNER & MANAGER REPORTS ══════════ */
 function renderReports(){
@@ -2238,16 +2656,18 @@ function ownerReport(oid){
     r.payChannel||'', r.reason||'', r.notes||'', r.by||'']));
   R.push([],['','','TOTAL', +tr.toFixed(2)]);
 
-  const IS = [['DATE','PROPERTY','ACCOUNTABLE','ISSUE','CATEGORY','SEVERITY','ANSWERED','REPLY MINS','STATUS']];
+  const IS = [['DATE','PROPERTY','ACCOUNTABLE','ISSUE','CATEGORY','SEVERITY','ANSWERED','REPLY MINS',
+    'OPEN / CLOSED','STAGE','OUTCOME','NOTES']];
   iss.sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach(i=>IS.push([i.date,
     i.property, i.manager||'', i.text, i.category, i.severity, i.responded?'Yes':'No',
-    i.responseMins==null?'':i.responseMins, i.status]));
+    i.responseMins==null?'':i.responseMins, stateOf(i), i.status, i.outcome||'', i.notes||'']));
 
   saveBook([['Summary',S,[{wch:40},{wch:16}]],
     ['Bookings',I,[{wch:22},{wch:20},{wch:14},{wch:18},{wch:16},{wch:13},{wch:12},{wch:24},{wch:11},{wch:11},{wch:7},{wch:12},{wch:9},{wch:13},{wch:11},{wch:11},{wch:26}]],
     ['Expenses',E,[{wch:22},{wch:11},{wch:22},{wch:26},{wch:13},{wch:16},{wch:12},{wch:8},{wch:12},{wch:26}]],
     ['Refunds',R,[{wch:11},{wch:20},{wch:22},{wch:12},{wch:16},{wch:18},{wch:26},{wch:14}]],
-    ['Issues',IS,[{wch:11},{wch:22},{wch:16},{wch:60},{wch:18},{wch:11},{wch:10},{wch:11},{wch:14}]]],
+    ['Issues',IS,[{wch:11},{wch:22},{wch:16},{wch:60},{wch:18},{wch:11},{wch:10},{wch:11},{wch:14},
+      {wch:14},{wch:28},{wch:46}]]],
     safeName(o.name) + '_' + (curMonth==='all'?'all':curMonth) + '_Report.xlsx');
 }
 function managerReport(mid){
@@ -2295,10 +2715,11 @@ $('repPack').onclick = function(){
       r>=80?'Strong':r>=50?'Needs work':r>0?'Critical':'No response']);
   });
   const IS = [['DATE','TIME','CLUSTER','PROPERTY','ACCOUNTABLE','REPORTED BY','ISSUE','CATEGORY',
-    'SEVERITY','ANSWERED','RESPONDER','REPLY MINS','STATUS']];
+    'SEVERITY','ANSWERED','RESPONDER','REPLY MINS','OPEN / CLOSED','STAGE','OUTCOME','NOTES','UPDATED BY']];
   iss.slice().sort((a,b)=>String((a.date||'')+(a.time||'')).localeCompare(String((b.date||'')+(b.time||''))))
     .forEach(i=>IS.push([i.date,i.time,i.cluster,i.property,i.manager,i.reportedBy,i.text,i.category,
-      i.severity, i.responded?'Yes':'No', i.responder||'', i.responseMins==null?'':i.responseMins, i.status]));
+      i.severity, i.responded?'Yes':'No', i.responder||'', i.responseMins==null?'':i.responseMins,
+      stateOf(i), i.status, i.outcome||'', i.notes||'', i.updBy||'']));
   const MS = [['DATE','PERSON','MANAGER','AREA','SEVERITY','WHAT HAPPENED','IMPACT','ACTION']];
   T('Mistakes').filter(inM).forEach(m=>MS.push([m.date,m.emp,m.mgr,m.area,m.severity,m.detail,m.impact,m.action]));
   const PF = [['DATE','PERSON','AREA','RATING','NOTES','LOGGED BY']];
@@ -2309,7 +2730,7 @@ $('repPack').onclick = function(){
   const PAY = [['PERSON','BASE','BONUSES','DEDUCTIONS','NET','CURRENCY']];
   if(can(4)){
     const by = {};
-    T('People').filter(p=>p.role!=='Admin').forEach(p=>by[p.name]={base:Number(p.salary)||0,cur:p.currency||'GHS',bonus:0,ded:0});
+    T('People').filter(p=>!TOPROLE(p.role)).forEach(p=>by[p.name]={base:Number(p.salary)||0,cur:p.currency||'GHS',bonus:0,ded:0});
     T('Incentives').filter(inM).forEach(function(x){
       const s = by[x.emp] = by[x.emp] || {base:0,cur:'GHS',bonus:0,ded:0};
       if(x.type==='Bonus') s.bonus += Number(x.amount)||0; else s.ded += Number(x.amount)||0; });
@@ -2317,7 +2738,8 @@ $('repPack').onclick = function(){
       PAY.push([k, by[k].base, by[k].bonus, by[k].ded, by[k].base+by[k].bonus-by[k].ded, by[k].cur]));
   }
   saveBook([['Scorecard',SC,[{wch:22},{wch:10},{wch:12},{wch:16},{wch:16},{wch:18},{wch:14}]],
-    ['Issue log',IS,[{wch:11},{wch:7},{wch:16},{wch:22},{wch:16},{wch:18},{wch:60},{wch:18},{wch:11},{wch:10},{wch:16},{wch:11},{wch:14}]],
+    ['Issue log',IS,[{wch:11},{wch:7},{wch:16},{wch:22},{wch:16},{wch:18},{wch:60},{wch:18},{wch:11},
+      {wch:10},{wch:16},{wch:11},{wch:14},{wch:14},{wch:28},{wch:46},{wch:16}]],
     ['Mistakes',MS,[{wch:11},{wch:18},{wch:16},{wch:18},{wch:11},{wch:50},{wch:18},{wch:24}]],
     ['Performance',PF,[{wch:11},{wch:18},{wch:22},{wch:14},{wch:44},{wch:16}]],
     ['Guest feedback',GF,[{wch:11},{wch:22},{wch:18},{wch:10},{wch:16},{wch:44},{wch:30}]],
@@ -2330,7 +2752,7 @@ $('repPack').onclick = function(){
 const EXPORT_COLS = {
   Tasks:['task','assignee','category','priority','due','dueT','status','note','assignedBy'],
   Issues:['date','time','cluster','property','manager','reportedBy','text','category','severity',
-          'responded','responder','responseMins','status'],
+          'responded','responder','responseMins','state','status','outcome','notes','updBy'],
   CheckDone:['date','emp','item','time'],
   ClockIns:['date','emp','role','time'],
   Performance:['date','emp','category','rating','note','by'],
@@ -2477,12 +2899,16 @@ function renderAll(){
     safely('guest feedback', renderGuest);
     safely('performance', renderPerf);
     safely('mistakes', renderMistakes);
+  }
+  /* The four money screens moved up to level 4 with the Revenue tab. Drawing
+     them for a manager would only ever produce empty tables now — the server
+     sends no rows — but it would also run fundStats and perOwner over nothing
+     on every poll, and leave four blank panels one URL away. */
+  if(can(4)){
     safely('bookings', renderBookings);
     safely('expenses', renderExpenses);
     safely('refunds', renderRefunds);
     safely('field funds', renderFunds);
-  }
-  if(can(4)){
     safely('incentives', renderIncentives);
     safely('reports', renderReports);
     safely('logins', renderLogins);
